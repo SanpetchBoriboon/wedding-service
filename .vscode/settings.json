@@ -1,0 +1,26 @@
+{
+  // เปิดการ format ตอน save
+  "editor.formatOnSave": true,
+
+  // ใช้ default formatter ของ Angular (ถ้ามี Prettier ให้ใช้)
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // จัด format ผ่าน prettier ให้เหมือนกันทั้งโปรเจกต์
+  "prettier.singleQuote": true,
+  "prettier.semi": true,
+  "prettier.trailingComma": "all",
+  "prettier.printWidth": 100,
+  "prettier.tabWidth": 2,
+  "prettier.useTabs": false
+}

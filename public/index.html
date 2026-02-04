@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Card Online Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d4a574;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .api-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .endpoint {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-left: 4px solid #d4a574;
+            margin: 10px 0;
+        }
+        code {
+            background-color: #f1f3f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wedding Card Online Service</h1>
+        <p>Welcome to the Wedding Card Online Service API! This service helps you create and manage beautiful wedding invitation cards.</p>
+        
+        <div class="api-info">
+            <h3>Available Endpoints:</h3>
+            
+            <div class="endpoint">
+                <strong>GET /</strong> - API welcome message
+            </div>
+            
+            <div class="endpoint">
+                <strong>GET /api/cards</strong> - Get list of wedding card templates
+            </div>
+            
+            <div class="endpoint">
+                <strong>POST /api/cards</strong> - Create a new wedding card<br>
+                <small>Body: <code>{ "title": "Wedding Title", "message": "Your message", "template": "template_name" }</code></small>
+            </div>
+            
+            <div class="endpoint">
+                <strong>GET /health</strong> - Health check endpoint
+            </div>
+        </div>
+        
+        <p>This is a static HTML page served from the public directory. The API is accessible via the endpoints listed above.</p>
+        
+        <p><strong>Getting Started:</strong></p>
+        <ol>
+            <li>Make sure the server is running</li>
+            <li>Use a tool like Postman or curl to interact with the API</li>
+            <li>Create your first wedding card by sending a POST request to <code>/api/cards</code></li>
+        </ol>
+    </div>
+</body>
+</html>
