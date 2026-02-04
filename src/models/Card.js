@@ -6,6 +6,7 @@ class Card {
     this.title = data.title;
     this.message = data.message;
     this.template = data.template || "default";
+    this.imageUrl = data.imageUrl || null; // Add image URL field
     this.createdBy = data.createdBy;
     this.userId = data.userId;
     this.createdAt = new Date();
@@ -49,6 +50,7 @@ class Card {
             title: "Sample Wedding Card 1",
             message: "Join us for our special day!",
             template: "elegant",
+            imageUrl: null,
             createdBy: "demo",
             userId: 1,
             status: "active",
@@ -60,6 +62,7 @@ class Card {
             title: "Sample Wedding Card 2",
             message: "You're invited to celebrate with us!",
             template: "romantic",
+            imageUrl: null,
             createdBy: "demo",
             userId: 1,
             status: "active",
