@@ -191,6 +191,49 @@ Authorization: Bearer your_jwt_token
 
 ## Usage Examples
 
+### Postman Testing
+
+#### 1. **Upload Image Only** - `/api/upload/image`
+
+**Request Setup:**
+
+1. Method: **POST**
+2. URL: `http://localhost:3000/api/upload/image`
+3. **Headers:**
+   - `Authorization: Bearer your_jwt_token`
+4. **Body:**
+   - เลือก **form-data** (ไม่ใช่ raw)
+   - เพิ่ม key `image` → เปลี่ยน Type เป็น **File**
+   - เลือกไฟล์รูปภาพ
+
+#### 2. **Upload Image and Create Card** - `/api/upload/card-image`
+
+**Request Setup:**
+
+1. Method: **POST**
+2. URL: `http://localhost:3000/api/upload/card-image`
+3. **Headers:**
+   - `Authorization: Bearer your_jwt_token`
+4. **Body (form-data):**
+
+| Key       | Type     | Value                                 |
+| --------- | -------- | ------------------------------------- |
+| `image`   | **File** | เลือกไฟล์รูปภาพ                       |
+| `title`   | Text     | "Our Wedding Day"                     |
+| `message` | Text     | "Join us on our special day"          |
+| `cardId`  | Text     | (optional - ใส่เพื่ออัพเดท card เดิม) |
+
+#### 3. **Delete Image** - `/api/upload/image/:fileName`
+
+**Request Setup:**
+
+1. Method: **DELETE**
+2. URL: `http://localhost:3000/api/upload/image/wedding-cards/user123/uuid.jpg`
+3. **Headers:**
+   - `Authorization: Bearer your_jwt_token`
+
+**⚠️ สำคัญ:** ต้องเปลี่ยน Type ของ `image` field จาก **Text** เป็น **File** ใน form-data
+
 ### cURL Examples
 
 1. **Upload Image:**
