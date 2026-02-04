@@ -24,131 +24,163 @@ const upload = multer({
   },
 });
 
-// POST /api/upload/card-image - Upload image and create/update card
+// Optional file upload middleware for card-image endpoint
+const optionalImageUpload = (req, res, next) => {
+  const uploadSingle = upload.single("image");
+
+  uploadSingle(req, res, (err) => {
+    // If error is about missing file, that's okay for optional upload
+    if (err && err.code === "LIMIT_UNEXPECTED_FILE") {
+      // Continue without file
+      return next();
+    } else if (err) {
+      // Other multer errors (file too large, wrong type, etc.)
+      return res.status(400).json({
+        error: "Upload error",
+        message: err.message,
+      });
+    }
+    // Continue normally (with or without file)
+    next();
+  });
+};
+
+// POST /api/upload/card-image - Upload image and create/update card (image optional)
 router.post(
   "/card-image",
   authenticateToken,
-  upload.single("image"),
+  optionalImageUpload,
   async (req, res) => {
     try {
-      if (!isInitialized) {
+      if (!isInitialized && req.file) {
         return res.status(503).json({
           error: "Service unavailable",
           message: "Firebase storage is not configured",
         });
       }
 
-      if (!req.file) {
+      const { title, message } = req.body;
+
+      // Validation: require at least title or message if no cardId (for new card)
+      if (!title && !message) {
         return res.status(400).json({
-          error: "No file uploaded",
-          message: "Please select an image to upload",
+          error: "Validation error",
+          message: "Title or message is required for new card",
         });
       }
 
-      const { title, message, cardId } = req.body;
+      // Function to create or update card
+      const processCard = async (imageUrl = null) => {
+        let card;
 
-      // Generate unique filename
-      const fileExtension = path.extname(req.file.originalname);
-      const fileName = `photo-all-wishes/${uuidv4()}${fileExtension}`;
+        const templateList = [
+          "#7E8B78",
+          "#BFC6B4",
+          "#E1E6D5",
+          "#F8F3C7",
+          "#E9C56E",
+        ];
 
-      // Create a file in Firebase Storage
-      const file = bucket.file(fileName);
+        // Randomly select a template from the list
+        const randomTemplate =
+          templateList[Math.floor(Math.random() * templateList.length)];
 
-      // Create a write stream
-      const stream = file.createWriteStream({
-        metadata: {
-          contentType: req.file.mimetype,
-          metadata: {
-            uploadedBy: req.user.username,
-            originalName: req.file.originalname,
-            uploadedAt: new Date().toISOString(),
+        // Create new card
+        const cardData = {
+          title: title || "Wedding Card",
+          message: message || "Beautiful wedding card",
+          template: randomTemplate,
+          imageUrl: imageUrl,
+          createdBy: req.user.username,
+          userId: req.user.id,
+        };
+
+        const newCard = new Card(cardData);
+        card = await newCard.save();
+
+        return card;
+      };
+
+      // If no image file, just create/update card
+      if (!req.file) {
+        const card = await processCard();
+
+        return res.status(200).json({
+          message: "Card created successfully",
+          data: {
+            card: card,
           },
-        },
-      });
-
-      // Handle upload completion
-      stream.on("error", (error) => {
-        console.error("Upload error:", error);
-        res.status(500).json({
-          error: "Upload failed",
-          message: "Failed to upload image to storage",
         });
-      });
+      } else {
+        // If image file exists, upload to Firebase first
+        const fileExtension = path.extname(req.file.originalname);
+        const fileName = `photo-all-wishes/${uuidv4()}${fileExtension}`;
 
-      stream.on("finish", async () => {
-        try {
-          // Make the file publicly accessible
-          await file.makePublic();
+        // Create a file in Firebase Storage
+        const file = bucket.file(fileName);
 
-          // Get the public URL
-          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-
-          let card;
-
-          if (cardId) {
-            // Update existing card with image URL
-            const updateData = { imageUrl: publicUrl };
-            if (title) updateData.title = title;
-            if (message) updateData.message = message;
-
-            card = await Card.updateById(cardId, updateData);
-          } else {
-            const templateList = [
-              "#7E8B78",
-              "#BFC6B4",
-              "#E1E6D5",
-              "#F8F3C7",
-              "#E9C56E",
-            ];
-
-            // Randomly select a template from the list
-            const randomTemplate =
-              templateList[Math.floor(Math.random() * templateList.length)];
-            // Create new card with image URL
-            const cardData = {
-              title: title || "Wedding Card with Image",
-              message: message || "Beautiful wedding card",
-              template: randomTemplate,
-              imageUrl: publicUrl,
-              createdBy: req.user.username,
-              userId: req.user.id,
-            };
-
-            const newCard = new Card(cardData);
-            card = await newCard.save();
-          }
-
-          res.status(200).json({
-            message: cardId
-              ? "Card updated with image successfully"
-              : "Card created with image successfully",
-            data: {
-              card: card,
-              image: {
-                url: publicUrl,
-                fileName: fileName,
-                originalName: req.file.originalname,
-                size: req.file.size,
-                mimeType: req.file.mimetype,
-              },
+        // Create a write stream
+        const stream = file.createWriteStream({
+          metadata: {
+            contentType: req.file.mimetype,
+            metadata: {
+              uploadedBy: req.user.username,
+              originalName: req.file.originalname,
+              uploadedAt: new Date().toISOString(),
             },
-          });
-        } catch (error) {
-          console.error("Error processing card with image:", error);
-          res.status(500).json({
-            error: "Upload completed but card processing failed",
-            message: "Image uploaded but card creation/update failed",
-          });
-        }
-      });
+          },
+        });
 
-      // Upload the file
-      stream.end(req.file.buffer);
+        // Handle upload completion
+        stream.on("error", (error) => {
+          console.error("Upload error:", error);
+          res.status(500).json({
+            error: "Upload failed",
+            message: "Failed to upload image to storage",
+          });
+        });
+
+        stream.on("finish", async () => {
+          try {
+            // Make the file publicly accessible
+            await file.makePublic();
+
+            // Get the public URL
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+            // Create or update card with image URL
+            const card = await processCard(publicUrl);
+
+            res.status(200).json({
+              message: "Card created with image successfully",
+              data: {
+                card: card,
+                image: {
+                  url: publicUrl,
+                  fileName: fileName,
+                  originalName: req.file.originalname,
+                  size: req.file.size,
+                  mimeType: req.file.mimetype,
+                },
+              },
+            });
+          } catch (error) {
+            console.error("Error processing card with image:", error);
+            res.status(500).json({
+              error: "Upload completed but card processing failed",
+              message: "Image uploaded but card creation/update failed",
+            });
+          }
+        });
+
+        // Upload the file
+        stream.end(req.file.buffer);
+      }
     } catch (error) {
       console.error("Card image upload route error:", error);
       res.status(500).json({
         error: "Internal server error",
-        message: "Failed to process card image upload",
+        message: "Failed to process card upload request",
       });
     }
   },
