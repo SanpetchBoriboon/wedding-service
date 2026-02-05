@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const path = require("path");
 const { authenticateToken } = require("../../middleware/auth");
 const { bucket, isInitialized } = require("../../config/firebase");
-const Card = require("../../models/Card");
+const Card = require("../../models/cardModel");
 
 const router = express.Router();
 

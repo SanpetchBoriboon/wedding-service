@@ -4,7 +4,7 @@ const {
   optionalAuthenticateToken,
   requireRole,
 } = require("../../middleware/auth");
-const Card = require("../../models/Card");
+const Card = require("../../models/cardModel");
 const axios = require("axios");
 const router = express.Router();
 
@@ -15,13 +15,7 @@ router.get("/", optionalAuthenticateToken, async (req, res) => {
   try {
     let cards;
 
-    if (req.user) {
-      // If user is authenticated, show their cards
-      cards = await Card.findByUserId(req.user.id);
-    } else {
-      // If no user, show all public cards
-      cards = await Card.findAll({ status: "active" });
-    }
+    cards = await Card.findAll({ status: "active" });
 
     res.json({
       message: "List of Greeting Cards",

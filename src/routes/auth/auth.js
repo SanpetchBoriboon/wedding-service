@@ -19,7 +19,7 @@ router.post("/tokens/guest", (req, res) => {
 
   // ตรวจสอบวันที่ - อนุญาตเฉพาะวันที่ 26/02/2026
   const currentDate = new Date();
-  // const allowedDate = new Date("2026-02-26");
+  // const allowedDate = new Date(process.env.ALLOWE_DATE);
   const allowedDate = new Date();
 
   // เปรียบเทียบเฉพาะวันที่ (ไม่รวมเวลา)

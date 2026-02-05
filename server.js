@@ -4,8 +4,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 
-// Import database
-const mongodb = require("./src/config/database");
+// Import mongoose database connection
+const mongooseConnection = require("./src/config/mongoose");
 
 // Import routes
 const apiRoutes = require("./src/routes");
@@ -83,13 +83,11 @@ app.use((err, req, res, next) => {
 // Start server with database connection
 async function startServer() {
   try {
-    // Try to connect to MongoDB
-    const db = await mongodb.connect();
+    // Try to connect to MongoDB with Mongoose
+    const db = await mongooseConnection.connect();
 
-    if (db) {
-      // Create database indexes
-      const Card = require("./src/models/Card");
-      await Card.createIndexes();
+    if (mongooseConnection.isConnectedToDatabase()) {
+      console.log("✅ Database connection established");
     } else {
       console.warn("⚠️ Running in fallback mode without database");
     }
@@ -99,7 +97,9 @@ async function startServer() {
       console.log(`Wedding Card Service is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
       console.log(`Access the API at: http://localhost:${PORT}`);
-      console.log(`Database: ${db ? "Connected" : "Fallback mode"}`);
+      console.log(
+        `Database: ${mongooseConnection.isConnectedToDatabase() ? "Connected" : "Fallback mode"}`,
+      );
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
@@ -110,13 +110,13 @@ async function startServer() {
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   console.log("🛑 Received SIGTERM. Shutting down gracefully...");
-  await mongodb.disconnect();
+  await mongooseConnection.disconnect();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
   console.log("🛑 Received SIGINT. Shutting down gracefully...");
-  await mongodb.disconnect();
+  await mongooseConnection.disconnect();
   process.exit(0);
 });
 
