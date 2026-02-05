@@ -36,7 +36,7 @@ app.use("/api", apiRoutes);
 // Health check
 app.get("/health", async (req, res) => {
   try {
-    const dbConnected = await mongodb.ping();
+    const dbConnected = mongooseConnection.isConnectedToDatabase();
 
     res.status(200).json({
       status: "OK",

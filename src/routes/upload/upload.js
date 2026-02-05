@@ -81,13 +81,21 @@ router.post(
           "#E9C56E",
         ];
 
+        const titleList = [
+          "Congratulations on your wedding!",
+          "Wishing you a lifetime of love and happiness.",
+          "Best wishes for a happy marriage!",
+          "Happy wedding day!",
+          "Cheers to the newlyweds!",
+        ];
+
         // Randomly select a template from the list
         const randomTemplate =
           templateList[Math.floor(Math.random() * templateList.length)];
-
+        const title = titleList[Math.floor(Math.random() * titleList.length)];
         // Create new card
         const cardData = {
-          title: title || "Wedding Card",
+          title: title,
           message: message || "Beautiful wedding card",
           template: randomTemplate,
           imageUrl: imageUrl,

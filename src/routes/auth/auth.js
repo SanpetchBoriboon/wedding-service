@@ -3,24 +3,24 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 /**
- * POST /api/auth/tokens/guest
+ * POST /api/auth/:role/tokens/
  * Generate JWT token for guest with custom username
  * Only available on 26/02/2026, token expires in 24 hours
  */
-router.post("/tokens/guest", (req, res) => {
-  const { username } = req.body;
+router.post("/:role/tokens", (req, res) => {
+  const role = req.params.role;
 
-  if (!username) {
+  if (!role) {
     return res.status(400).json({
       error: "Bad Request",
-      message: "Username is required",
+      message: "Role is required",
     });
   }
 
   // ตรวจสอบวันที่ - อนุญาตเฉพาะวันที่ 26/02/2026
   const currentDate = new Date();
-  // const allowedDate = new Date(process.env.ALLOWE_DATE);
-  const allowedDate = new Date();
+  const allowedDate = new Date(process.env.ALLOWE_DATE);
+  // const allowedDate = new Date();
 
   // เปรียบเทียบเฉพาะวันที่ (ไม่รวมเวลา)
   const currentDateOnly = new Date(
@@ -51,14 +51,23 @@ router.post("/tokens/guest", (req, res) => {
   }
 
   const userData = {
-    username: username,
+    username: role + Date.now(),
     id: Date.now(), // Use timestamp as unique ID for guest
-    role: "guest",
+    role: role,
   };
 
-  const token = jwt.sign(userData, process.env.JWT_SECRET, {
-    expiresIn: "24h", // Token expires in 24 hours
-  });
+  let token = "";
+
+  if (role === "guest") {
+    token = jwt.sign(userData, process.env.JWT_SECRET, {
+      expiresIn: "24h", // Token expires in 24 hours
+    });
+  } else {
+    return res.status(400).json({
+      error: "Bad Request",
+      message: "Role wrong",
+    });
+  }
 
   res.json({
     message: "Guest token generated successfully",
