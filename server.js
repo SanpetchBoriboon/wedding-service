@@ -93,9 +93,10 @@ async function startServer() {
     }
 
     // Start HTTP server
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`Wedding Card Service is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+      console.log(`Host: 0.0.0.0:${PORT}`);
       console.log(`Access the API at: http://localhost:${PORT}`);
       console.log(
         `Database: ${mongooseConnection.isConnectedToDatabase() ? "Connected" : "Fallback mode"}`,
