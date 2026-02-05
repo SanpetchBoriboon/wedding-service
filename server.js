@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
+const os = require("os");
 
 // Import mongoose database connection
 const mongooseConnection = require("./src/config/mongoose");
@@ -12,6 +13,20 @@ const apiRoutes = require("./src/routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Function to get server IP address
+function getServerIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const interface of interfaces[name]) {
+      // Skip internal/loopback addresses
+      if (interface.family === "IPv4" && !interface.internal) {
+        return interface.address;
+      }
+    }
+  }
+  return "0.0.0.0"; // fallback
+}
 
 // Middleware
 app.use(helmet());
@@ -94,10 +109,13 @@ async function startServer() {
 
     // Start HTTP server
     app.listen(PORT, "0.0.0.0", () => {
+      const serverIP = getServerIP();
       console.log(`Wedding Card Service is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
       console.log(`Host: 0.0.0.0:${PORT}`);
-      console.log(`Access the API at: http://localhost:${PORT}`);
+      console.log(`Server IP: ${serverIP}`);
+      console.log(`Access the API at: http://${serverIP}:${PORT}`);
+      console.log(`Local access: http://localhost:${PORT}`);
       console.log(
         `Database: ${mongooseConnection.isConnectedToDatabase() ? "Connected" : "Fallback mode"}`,
       );
