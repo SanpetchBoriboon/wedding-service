@@ -3,6 +3,73 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 /**
+ * POST /api/auth/tokens/guest
+ * Generate JWT token for guest with custom username
+ * Only available on 26/02/2026, token expires in 24 hours
+ */
+router.post("/tokens/guest", (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({
+      error: "Bad Request",
+      message: "Username is required",
+    });
+  }
+
+  // ตรวจสอบวันที่ - อนุญาตเฉพาะวันที่ 26/02/2026
+  const currentDate = new Date();
+  // const allowedDate = new Date("2026-02-26");
+  const allowedDate = new Date();
+
+  // เปรียบเทียบเฉพาะวันที่ (ไม่รวมเวลา)
+  const currentDateOnly = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate(),
+  );
+  const allowedDateOnly = new Date(
+    allowedDate.getFullYear(),
+    allowedDate.getMonth(),
+    allowedDate.getDate(),
+  );
+
+  if (currentDateOnly.getTime() !== allowedDateOnly.getTime()) {
+    return res.status(403).json({
+      error: "Token Request Forbidden",
+      message: "Guest tokens can only be requested on February 26, 2026",
+      currentDate: currentDate.toISOString().split("T")[0],
+      allowedDate: "2026-02-26",
+    });
+  }
+
+  if (!process.env.JWT_SECRET) {
+    return res.status(500).json({
+      error: "Server Configuration Error",
+      message: "JWT secret not configured",
+    });
+  }
+
+  const userData = {
+    username: username,
+    id: Date.now(), // Use timestamp as unique ID for guest
+    role: "guest",
+  };
+
+  const token = jwt.sign(userData, process.env.JWT_SECRET, {
+    expiresIn: "24h", // Token expires in 24 hours
+  });
+
+  res.json({
+    message: "Guest token generated successfully",
+    token: token,
+    user: userData,
+    tokenExpiresIn: "24 hours",
+    validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  });
+});
+
+/**
  * GET /api/auth/tokens
  * Get JWT token from environment variables
  */
@@ -24,10 +91,6 @@ router.get("/tokens", (req, res) => {
       id: 1,
       role: "admin",
     },
-    usage: {
-      header: "Authorization: Bearer <token>",
-      example: `Authorization: Bearer ${token}`,
-    },
   });
 });
 
@@ -45,8 +108,6 @@ router.post("/verify", (req, res) => {
       message: "Token is required",
     });
   }
-
-  console.log(token, process.env.JWT_SECRET);
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
