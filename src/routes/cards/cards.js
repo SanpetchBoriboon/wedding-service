@@ -4,8 +4,8 @@ const {
   optionalAuthenticateToken,
   requireRole,
 } = require("../../middleware/auth");
-const Card = require("../../models/cardModel");
-const axios = require("axios");
+const CardModel = require("../../models/cardModel");
+const { bucket } = require("../../config/firebase");
 const router = express.Router();
 
 // Wedding card routes
@@ -13,9 +13,7 @@ const router = express.Router();
 // GET /api/cards - List cards (optional auth to show user's cards)
 router.get("/", optionalAuthenticateToken, async (req, res) => {
   try {
-    let cards;
-
-    cards = await Card.findAll({ status: "active" });
+    const cards = await CardModel.findAll({ status: "active" });
 
     res.json({
       message: "List of Greeting Cards",
@@ -46,7 +44,7 @@ router.get("/image-proxy", async (req, res) => {
     // Validate that the URL is from Firebase Storage (support both old and new formats)
     const firebaseStoragePatterns = [
       /^https:\/\/firebasestorage\.googleapis\.com/, // Old format
-      /^https:\/\/storage\.googleapis\.com\/.*\.firebasestorage\.app/, // New format
+      /^https:\/\/storage\.googleapis\.com\/.*\.firebasestorage\.app/, // New format (with optional path)
     ];
 
     const isValidFirebaseUrl = firebaseStoragePatterns.some((pattern) =>
@@ -61,47 +59,92 @@ router.get("/image-proxy", async (req, res) => {
       });
     }
 
-    // Fetch image from Firebase Storage
-    const response = await axios({
-      method: "GET",
-      url: url,
-      responseType: "stream",
-      timeout: 10000, // 10 second timeout
+    // Parse Firebase Storage URL to extract filename
+    let fileName;
+    try {
+      const urlObj = new URL(url);
+
+      if (urlObj.hostname === "storage.googleapis.com") {
+        // Format: https://storage.googleapis.com/bucket-name/path/file.ext
+        const pathParts = urlObj.pathname.split("/");
+        if (pathParts.length < 3) {
+          throw new Error("Invalid URL format");
+        }
+        fileName = pathParts.slice(2).join("/"); // Remove empty first element and bucket name
+      } else if (urlObj.hostname.includes("firebasestorage.googleapis.com")) {
+        // Format: https://firebasestorage.googleapis.com/v0/b/bucket-name/o/path%2Ffile.ext
+        const match = urlObj.pathname.match(/^\/v0\/b\/[^\/]+\/o\/(.+)$/);
+        if (match) {
+          fileName = decodeURIComponent(match[1]);
+        } else {
+          throw new Error("Invalid Firebase Storage URL format");
+        }
+      } else {
+        throw new Error("Unsupported URL format");
+      }
+    } catch (error) {
+      return res.status(400).json({
+        error: "Invalid URL",
+        message: "Could not parse Firebase Storage URL",
+        details: error.message,
+      });
+    }
+
+    // Use Firebase SDK to access the file
+    const file = bucket.file(fileName);
+
+    // Check if file exists
+    const [exists] = await file.exists();
+    if (!exists) {
+      return res.status(404).json({
+        error: "Not Found",
+        message: "Image not found in Firebase Storage",
+        filename: fileName,
+      });
+    }
+
+    // Get file metadata for proper headers
+    const [metadata] = await file.getMetadata();
+
+    // Set response headers
+    res.setHeader(
+      "Content-Type",
+      metadata.contentType || "application/octet-stream",
+    );
+    res.setHeader("Content-Length", metadata.size || 0);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${fileName.split("/").pop()}"`,
+    );
+
+    // Stream the file directly from Firebase Storage
+    const stream = file.createReadStream();
+
+    stream.on("error", (error) => {
+      console.error("Firebase Storage stream error:", error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: "Stream Error",
+          message: "Failed to stream image from Firebase Storage",
+        });
+      }
     });
 
-    // Set appropriate headers
-    res.set({
-      "Content-Type": response.headers["content-type"] || "image/jpeg",
-      "Content-Length": response.headers["content-length"],
-      "Cache-Control": "public, max-age=3600", // Cache for 1 hour
-      "Access-Control-Allow-Origin": "*", // Allow all origins
-      "Access-Control-Allow-Methods": "GET",
-      "Access-Control-Allow-Headers": "Content-Type",
-    });
-
-    // Pipe the image data to the response
-    response.data.pipe(res);
+    // Pipe the image data to response
+    stream.pipe(res);
   } catch (error) {
     console.error("Error proxying image:", error.message);
 
-    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
-      return res.status(504).json({
-        error: "Gateway Timeout",
-        message: "Image request timed out",
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to proxy image from Firebase Storage",
       });
     }
-
-    if (error.response && error.response.status) {
-      return res.status(error.response.status).json({
-        error: "Image Fetch Error",
-        message: `Failed to fetch image: ${error.response.statusText}`,
-      });
-    }
-
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: "Failed to proxy image",
-    });
   }
 });
 
@@ -115,7 +158,7 @@ router.delete(
       const cardId = req.params.id;
 
       // Check if card exists
-      const existingCard = await Card.findById(cardId);
+      const existingCard = await CardModel.findById(cardId);
 
       if (!existingCard) {
         return res.status(404).json({
@@ -125,7 +168,7 @@ router.delete(
       }
 
       // Delete card
-      await Card.deleteById(cardId);
+      await CardModel.deleteById(cardId);
 
       res.json({
         message: "Wedding card deleted successfully",
