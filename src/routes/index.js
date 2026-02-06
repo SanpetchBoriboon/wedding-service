@@ -5,10 +5,12 @@ const router = express.Router();
 const cardsRoutes = require("./cards/cards");
 const authRoutes = require("./auth/auth");
 const uploadRoutes = require("./upload/upload");
+const imageRoutes = require("./image/image");
 
 // Mount routes
 router.use("/auth", authRoutes);
 router.use("/cards", cardsRoutes);
 router.use("/upload", uploadRoutes);
+router.use("/images", imageRoutes);
 
 module.exports = router;
