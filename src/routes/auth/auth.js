@@ -39,7 +39,7 @@ router.post("/:role/tokens", (req, res) => {
       error: "Token Request Forbidden",
       message: "Guest tokens can only be requested on February 26, 2026",
       currentDate: currentDate.toISOString().split("T")[0],
-      allowedDate: "2026-02-26",
+      allowedDate: allowedDate,
     });
   }
 
