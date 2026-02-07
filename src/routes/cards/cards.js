@@ -11,23 +11,28 @@ const router = express.Router();
 // Wedding card routes
 
 // GET /api/cards - List cards (optional auth to show user's cards)
-router.get("/", optionalAuthenticateToken, async (req, res) => {
-  try {
-    const cards = await CardModel.findAll({ status: "active" });
+router.get(
+  "/",
+  authenticateToken,
+  optionalAuthenticateToken,
+  async (req, res) => {
+    try {
+      const cards = await CardModel.findAll({ status: "active" });
 
-    res.json({
-      message: "List of Greeting Cards",
-      cards: cards,
-      count: cards.length,
-    });
-  } catch (error) {
-    console.error("Error fetching cards:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      message: "Failed to fetch cards",
-    });
-  }
-});
+      res.json({
+        message: "List of Greeting Cards",
+        cards: cards,
+        count: cards.length,
+      });
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        message: "Failed to fetch cards",
+      });
+    }
+  },
+);
 
 // GET /api/cards/image-proxy - Proxy images from Firebase Storage to avoid CORS issues
 router.get("/image-proxy", async (req, res) => {
