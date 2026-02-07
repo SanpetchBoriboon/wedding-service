@@ -34,7 +34,7 @@ router.post("/:role/tokens", (req, res) => {
     allowedDate.getDate(),
   );
 
-  if (currentDateOnly.getTime() !== allowedDateOnly.getTime()) {
+  if (currentDateOnly.getTime() < allowedDateOnly.getTime()) {
     return res.status(403).json({
       error: "Token Request Forbidden",
       message: "Guest tokens can only be requested on February 26, 2026",
@@ -54,6 +54,8 @@ router.post("/:role/tokens", (req, res) => {
     username: role + Date.now(),
     id: Date.now(), // Use timestamp as unique ID for guest
     role: role,
+    currentDate: currentDate.toISOString().split("T")[0],
+    allowedDate: allowedDate,
   };
 
   let token = "";
