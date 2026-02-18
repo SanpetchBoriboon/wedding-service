@@ -35,11 +35,20 @@ router.post("/:role/tokens", (req, res) => {
   );
 
   if (currentDateOnly.getTime() < allowedDateOnly.getTime()) {
-    return res.status(403).json({
-      error: "Token Request Forbidden",
-      message: "Guest tokens can only be requested on February 26, 2026",
+    return res.status(200).json({
+      error: "Token Request Not Yet Available",
+      message:
+        "Guest tokens are not yet available. Please try again on February 26, 2026",
       currentDate: currentDate.toISOString().split("T")[0],
-      allowedDate: allowedDate,
+      allowedDate: allowedDate.toISOString().split("T")[0],
+    });
+  } else if (currentDateOnly.getTime() > allowedDateOnly.getTime()) {
+    return res.status(200).json({
+      error: "Token Request Expired",
+      message:
+        "Guest token request period has ended. Tokens could only be requested on February 26, 2026",
+      currentDate: currentDate.toISOString().split("T")[0],
+      allowedDate: allowedDate.toISOString().split("T")[0],
     });
   }
 
