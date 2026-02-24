@@ -11,17 +11,8 @@ const router = express.Router();
 // Wedding card routes
 
 // GET /api/cards - List cards (optional auth to show user's cards)
-router.get("/", optionalAuthenticateToken, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    // ถ้าไม่มี user จาก token (token ไม่ถูกต้องหรือไม่มี token) ส่ง array ว่าง
-    if (!req.user) {
-      return res.json({
-        message: "List of Greeting Cards",
-        cards: [],
-        count: 0,
-      });
-    }
-
     const cards = await CardModel.findAll({ status: "active" });
 
     res.json({

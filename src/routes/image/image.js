@@ -55,7 +55,7 @@ router.get("/", async (req, res) => {
 
     const [files, , metadata] = await bucket.getFiles(options);
 
-    const images = await Promise.all(
+    let images = await Promise.all(
       files.map(async (file) => {
         try {
           const [metadata] = await file.getMetadata();
@@ -67,17 +67,19 @@ router.get("/", async (req, res) => {
             expires: Date.now() + 1000 * 60 * 60, // 1 hour
           });
 
-          return {
-            name: file.name,
-            size: parseInt(metadata.size) || 0,
-            contentType: metadata.contentType || "unknown",
-            timeCreated: metadata.timeCreated,
-            updated: metadata.updated,
-            publicUrl: `https://storage.googleapis.com/${bucket.name}/${file.name}`,
-            signedUrl: signedUrl,
-            exists: exists,
-            metadata: metadata.metadata || {},
-          };
+          if (metadata.contentType.includes("image/")) {
+            return {
+              name: file.name,
+              size: parseInt(metadata.size) || 0,
+              contentType: metadata.contentType || "unknown",
+              timeCreated: metadata.timeCreated,
+              updated: metadata.updated,
+              publicUrl: `https://storage.googleapis.com/${bucket.name}/${file.name}`,
+              signedUrl: signedUrl,
+              exists: exists,
+              metadata: metadata.metadata || {},
+            };
+          }
         } catch (error) {
           console.warn(
             `Failed to get metadata for ${file.name}:`,
@@ -96,11 +98,12 @@ router.get("/", async (req, res) => {
       }),
     );
 
+    images = images.filter(Boolean);
+
     res.json({
       message: "Images retrieved successfully",
       images: images,
       count: images.length,
-      nextPageToken: metadata?.nextPageToken || null,
       prefix: prefix,
     });
   } catch (error) {
