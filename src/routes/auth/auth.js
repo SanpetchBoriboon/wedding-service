@@ -18,7 +18,7 @@ router.post("/:role/tokens", (req, res) => {
   }
 
   // ตรวจสอบวันที่ - อนุญาตเฉพาะวันที่ 26/02/2026
-  const currentDate = new Date();
+  const currentDate = new Date(process.env.ALLOWE_DATE);
   const allowedDate = new Date(process.env.ALLOWE_DATE);
   // const allowedDate = new Date();
 
